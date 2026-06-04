@@ -16,8 +16,8 @@ An AI-powered legal assistant built using Retrieval-Augmented Generation (RAG).
 - [x] Project setup
 - [x] Constitution PDF ingestion
 - [x] Text extraction
-- [ ] Chunking
-- [ ] Embeddings
+- [x] Chunking
+- [x] Embeddings
 - [ ] FAISS indexing
 - [ ] Retrieval pipeline
 - [ ] Gemini integration
