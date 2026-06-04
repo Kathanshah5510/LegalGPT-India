@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+projects_venv/
+
+# VS Code / Antigravity
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment variables / API keys
+.env
+.env.*
+
+# Generated vector databases
+vector_db/
+
+# Generated logs
+logs/
+*.log
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Model caches (optional)
+.cache/
+huggingface_cache/
+
+# Temporary files
+temp/
+tmp/
+
+# Python packaging
+build/
+dist/
+*.egg-info/
