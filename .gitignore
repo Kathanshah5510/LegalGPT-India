@@ -46,3 +46,6 @@ tmp/
 build/
 dist/
 *.egg-info/
+
+# API documentation
+Google_API_key.txt
