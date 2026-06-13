@@ -1,97 +1,62 @@
-from pypdf import PdfReader
+import os
 import re
+import pickle
+import numpy as np
+from pypdf import PdfReader
+from sentence_transformers import SentenceTransformer
+from tqdm import tqdm
 
+# Get the directory of the current script
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-def extract_text(pdf_path):
-    """
-    Extract text from PDF.
-    """
-
+def extract_text_from_pdf(pdf_path):
     reader = PdfReader(pdf_path)
-
     text = ""
-
     for page in reader.pages:
-
-        page_text = page.extract_text()
-
-        if page_text:
-            text += page_text + "\n"
-
+        text += page.extract_text() + "\n"
     return text
 
-
-def split_articles(text):
-    """
-    Split Constitution text into article-like chunks.
-
-    This is a first attempt and is meant for inspection.
-    """
-
-    pattern = r'\n(?=\d+\.\s)'
-
+def split_into_articles(text):
+    # Improved regex to catch articles like 21, 21A, 371J etc.
+    pattern = r'\n(?=\d+[A-Z]?\.\s)'
     articles = re.split(pattern, text)
-
-    return articles
-
-
-def clean_articles(article_chunks):
-
-    cleaned = []
-
-    for chunk in article_chunks:
-
-        chunk = chunk.strip()
-
-        if len(chunk) < 100:
-            continue
-
-        cleaned.append(chunk)
-
-    return cleaned
-
+    cleaned_articles = [art.strip() for art in articles if art.strip()]
+    return cleaned_articles
 
 def main():
+    pdf_path = os.path.join(BASE_DIR, "data", "constitution.pdf")
+    if not os.path.exists(pdf_path):
+        print(f"Error: {pdf_path} not found. Please place the Constitution PDF in the data folder.")
+        return
 
-    pdf_path = r"D:\MTech\Projects\LegalGPT-India\data\constitution.pdf"
+    print("Extracting text from PDF...")
+    text = extract_text_from_pdf(pdf_path)
+    
+    print("Splitting text into articles...")
+    articles = split_into_articles(text)
+    print(f"Total articles found: {len(articles)}")
 
-    print("=" * 60)
-    print("Reading Constitution PDF")
-    print("=" * 60)
+    # Load embedding model
+    print("Loading embedding model...")
+    model = SentenceTransformer('BAAI/bge-small-en-v1.5')
 
-    text = extract_text(pdf_path)
+    print("Generating embeddings for articles...")
+    article_embeddings = []
+    for article in tqdm(articles):
+        embedding = model.encode("Represent this sentence for searching relevant passages: " + article)
+        article_embeddings.append(embedding)
+    
+    article_embeddings = np.array(article_embeddings)
 
-    print(f"Characters extracted: {len(text):,}")
-
-    print("\nSplitting articles...")
-
-    articles = split_articles(text)
-
-    cleaned_articles = clean_articles(articles)
-
-    print(f"\nRaw article chunks: {len(articles)}")
-    print(f"Cleaned article chunks: {len(cleaned_articles)}")
-
-    print("\n" + "=" * 60)
-    print("SAMPLE CHUNKS")
-    print("=" * 60)
-
-    start = 20
-    end = 30
-
-    for i in range(start, end):
-
-        print("\n")
-        print("=" * 60)
-        print(f"ARTICLE CHUNK {i}")
-        print("=" * 60)
-
-        print(cleaned_articles[i][:1500])
-
-        print("\n")
-
-    print("\nFinished.")
-
+    # Save embeddings and articles
+    db_dir = os.path.join(BASE_DIR, "vector_db")
+    os.makedirs(db_dir, exist_ok=True)
+    
+    np.save(os.path.join(db_dir, "article_embeddings.npy"), article_embeddings)
+    with open(os.path.join(db_dir, "articles.pkl"), "wb") as f:
+        pickle.dump(articles, f)
+    
+    print(f"Ingestion complete. Saved to {db_dir}")
 
 if __name__ == "__main__":
     main()
